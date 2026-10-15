@@ -36,13 +36,21 @@ pub fn read<P: AsRef<Path>>(path: P) -> anyhow::Result<UndirectedGraph> {
             Ok(Event::Start(e)) => match e.name().as_ref() {
                 "nodes" => {
                     if let Ok(Some(attribute)) = e.try_get_attribute("count") {
-                        expected_vertices_count = Some(attribute.value.parse::<usize>()?);
+                        let count = attribute.value.parse::<usize>()?;
+                        graph.reserve_space_for_vertices(count);
+                        expected_vertices_count = Some(count);
                     }
                 }
-
                 "edges" => {
                     if let Ok(Some(attribute)) = e.try_get_attribute("count") {
-                        expected_edges_count = Some(attribute.value.parse::<usize>()?);
+                        let count = attribute.value.parse::<usize>()?;
+                        graph.reserve_space_for_edges(count);
+                        expected_edges_count = Some(count);
+                    }
+                }
+                "graph" => {
+                    if let Ok(Some(attribute)) = e.try_get_attribute("id") {
+                        graph.rename(attribute.value.to_string());
                     }
                 }
                 _ => (),
