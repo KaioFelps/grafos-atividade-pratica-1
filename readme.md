@@ -10,3 +10,10 @@
     versão normalizada da closeness centrality de cada vértice.
     - [x] Escreva nos comentários do código o que essa estatística representa.
     - [x] O código também deve imprimir como saída de texto a closeness centrality normalizado de cada vértice.
+
+## Rodando
+Para executar, é necessário ter o Rust (e o Cargo) instalados. Com isso feito, basta
+utilizar o comando `cargo run -- <CAMINHO DO ARQUIVO .gexf`. (Os `--` são necessários para repassar os argumentos
+pro programa ao invés de simplesmente passar pro Cargo.)
+
+Se preferir, utilize `cargo build --release` e, então, `./target/release/atividade-pratica-1 <CAMINHO DO ARQUIVO.gexf>`.

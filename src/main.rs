@@ -1,3 +1,5 @@
+use std::env;
+
 use crate::graph::{UndirectedGraph, Vertex};
 
 mod error;
@@ -42,7 +44,11 @@ fn print_closeness_centrality(
 }
 
 fn main() -> anyhow::Result<()> {
-    let graph = gext::read("LesMiserables.gexf")?;
+    let path = env::args().nth(1).ok_or_else(|| {
+        anyhow::anyhow!("Utilize o programa assim: cargo run -- <caminho/do/arquivo.gexf>")
+    })?;
+
+    let graph = gext::read(path)?;
 
     let mut vertices = graph.get_vertices();
     vertices.sort_by_key(|v| (v.key.parse::<u64>().unwrap_or(u64::MAX), v.key.to_string()));
