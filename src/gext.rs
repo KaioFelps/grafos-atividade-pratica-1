@@ -25,15 +25,17 @@ pub fn read<P: AsRef<Path>>(path: P) -> anyhow::Result<UndirectedGraph> {
 
     loop {
         match reader.read_event() {
-            Err(e) => panic!(
-                "Erro ao ler o grafo na posição {}: {:?}",
-                reader.error_position(),
-                e
-            ),
+            Err(e) => {
+                return Err(anyhow!(
+                    "Erro ao ler o grafo na posição {}: {:?}",
+                    reader.error_position(),
+                    e
+                ));
+            }
 
             Ok(Event::Eof) => break,
 
-            Ok(Event::Start(e)) => match e.name().as_ref() {
+            Ok(Event::Start(e) | Event::Empty(e)) => match e.name().as_ref() {
                 "nodes" => {
                     if let Ok(Some(attribute)) = e.try_get_attribute("count") {
                         let count = attribute.value.parse::<usize>()?;
@@ -53,9 +55,6 @@ pub fn read<P: AsRef<Path>>(path: P) -> anyhow::Result<UndirectedGraph> {
                         graph.rename(attribute.value.to_string());
                     }
                 }
-                _ => (),
-            },
-            Ok(Event::Empty(e)) => match e.name().as_ref() {
                 "node" => {
                     let key = get_attribute(&e, "id")?;
                     let value = get_attribute(&e, "label")?;
