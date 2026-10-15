@@ -95,6 +95,27 @@ impl UndirectedGraph {
         }
     }
 
+    /// a lista de adjacência mapeia um vértice para um vetor de todos os vértices que estão ligados a ele
+    fn calculate_adjaceny_map(&self) -> HashMap<&str, Vec<&str>> {
+        let mut adjacency_map = HashMap::<&str, Vec<&str>>::with_capacity(self.vertices.len());
+
+        for edge in &self.connections {
+            // isso praticamente pega o vetor mapeado pelo vértice de origem e já insere o destino no seu vetor de adjacência...
+            // o mesmo acontece pro target
+            adjacency_map
+                .entry(edge.origin())
+                .or_default()
+                .push(edge.target());
+
+            adjacency_map
+                .entry(edge.target())
+                .or_default()
+                .push(edge.origin());
+        }
+
+        adjacency_map
+    }
+
     pub fn get_vertex(&self, key: &str) -> Option<&Vertex> {
         self.vertices.get(key)
     }
@@ -134,28 +155,45 @@ impl UndirectedGraph {
         };
 
         let vertex_key = vertex_key.as_ref();
-
-        // a lista de adjacência mapeia um vértice para um vetor de todos os vértices que estão ligados a ele
-        let mut adjacency_map = HashMap::<&str, Vec<&str>>::with_capacity(self.vertices.len());
-        for edge in &self.connections {
-            // isso praticamente pega o vetor mapeado pelo vértice de origem e já insere o destino no seu vetor de adjacência...
-            // o mesmo acontece pro target
-            adjacency_map
-                .entry(edge.origin())
-                .or_default()
-                .push(edge.target());
-
-            adjacency_map
-                .entry(edge.target())
-                .or_default()
-                .push(edge.origin());
-        }
-
+        let adjacency_map = self.calculate_adjaceny_map();
         let distances = bfs_distances(vertex_key, &adjacency_map);
         // esse unwrap nunca vai ser chamado na realidade
         let eccentricity = distances.into_values().max().unwrap_or(0);
 
         Ok(eccentricity)
+    }
+
+    /// O _closeness centrality_ de um vértice é o inverso da distância média entre esse vértice e todos os outros.
+    /// Enquanto a excentricidade avalia o quão distante ele pode ser de um vértice, essa estatística mede o quão
+    /// próximo ele é, em média, dos outros vértices.
+    ///
+    /// Ela é calculada literalmente invertendo a distância média, isto é, a soma de todas as distâncias entre esse
+    /// vértice e os demais vértices e dividindo tudo por `vertices_len() - 1` (-1 pois o próprio vértice sob análise
+    /// não deve entrar nessa média).
+    ///
+    /// Nesse caso, como o dividendo é n-1 e não 1, já temos a estatística normalizada.
+    /// Quanto mais próximo de mais vértices, mais próximo de 1 fica (é 1 quando é vizinho de todos os vértices);
+    /// quanto mais distante, mais tende a 0 (é 0 quando não é vizinho de ninguém, isto é, é o único vértice do grafo.)
+    pub fn closeness_centrality_of_vertex(&self, vertex_key: &str) -> Result<f64, GraphError> {
+        let Some((vertex_key, _)) = self.vertices.get_key_value(vertex_key) else {
+            return Err(GraphError::foreign_vertex());
+        };
+
+        let adjacency_map: HashMap<&str, Vec<&str>> = self.calculate_adjaceny_map();
+        let distances = bfs_distances(vertex_key.as_ref(), &adjacency_map);
+
+        let total_distance: usize = distances.values().sum();
+
+        if total_distance == 0 {
+            return Ok(0.0);
+        }
+
+        let len_of_reachable_vertices = distances.len();
+
+        let closeness = (len_of_reachable_vertices - 1) as f64 / total_distance as f64;
+        let scale = (len_of_reachable_vertices - 1) as f64 / (self.vertices_len() - 1) as f64;
+
+        Ok(closeness * scale)
     }
 }
 
