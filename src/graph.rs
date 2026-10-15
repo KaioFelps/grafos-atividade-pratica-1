@@ -134,7 +134,7 @@ impl UndirectedGraph {
             return Ok(());
         }
 
-        return Err(GraphError::foreign_vertex());
+        Err(GraphError::foreign_vertex())
     }
 
     pub fn vertices_len(&self) -> usize {
