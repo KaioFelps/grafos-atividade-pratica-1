@@ -1,18 +1,16 @@
-use std::println;
-
-use crate::graph::UndirectedGraph;
+use crate::graph::{UndirectedGraph, Vertex};
 
 mod error;
 mod gext;
 mod graph;
 
-fn print_eccentricity(graph: &UndirectedGraph) -> anyhow::Result<()> {
+fn print_eccentricity(graph: &UndirectedGraph, sorted_vertices: &[&Vertex]) -> anyhow::Result<()> {
     println!(
         "Calculando excentricidade do grafo {}.",
         graph.name().unwrap_or("não-nomeado")
     );
 
-    for vertex in graph.get_vertices() {
+    for vertex in sorted_vertices {
         let eccentricity = graph.eccentricity_of_vertex(&vertex.key)?;
         println!(
             "Vértice {} (ID {}): {eccentricity}",
@@ -23,16 +21,19 @@ fn print_eccentricity(graph: &UndirectedGraph) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn print_closeness_centrality(graph: &UndirectedGraph) -> anyhow::Result<()> {
+fn print_closeness_centrality(
+    graph: &UndirectedGraph,
+    sorted_vertices: &[&Vertex],
+) -> anyhow::Result<()> {
     println!(
         "Calculando a centralidade da proximidade dos vértices do grafo {}.",
         graph.name().unwrap_or("não-nomeado")
     );
 
-    for vertex in graph.get_vertices() {
+    for vertex in sorted_vertices {
         let closeness = graph.closeness_centrality_of_vertex(&vertex.key)?;
         println!(
-            "Vértice {} (ID {}): {closeness}",
+            "Vértice {} (ID {}): {closeness:.6}",
             &vertex.value, &vertex.key
         );
     }
@@ -42,8 +43,12 @@ fn print_closeness_centrality(graph: &UndirectedGraph) -> anyhow::Result<()> {
 
 fn main() -> anyhow::Result<()> {
     let graph = gext::read("LesMiserables.gexf")?;
-    print_eccentricity(&graph)?;
+
+    let mut vertices = graph.get_vertices();
+    vertices.sort_by_key(|v| (v.key.parse::<u64>().unwrap_or(u64::MAX), v.key.to_string()));
+
+    print_eccentricity(&graph, &vertices)?;
     println!("\n");
-    print_closeness_centrality(&graph)?;
+    print_closeness_centrality(&graph, &vertices)?;
     Ok(())
 }
